@@ -365,13 +365,14 @@ class DbSync:
     def load_rows(self, records, count, temp_dir):
         stream_schema_message = self.stream_schema_message
         stream = stream_schema_message["stream"]
-        self.logger.info(
-            "Loading %d rows into '%s'", count, self.table_name(stream, False)
-        )
 
         cur = self.conn
         temp_table = self.table_name(stream_schema_message["stream"], is_temporary=True)
         temp_file_csv = os.path.join(temp_dir, f"{temp_table}.csv")
+
+        self.logger.info(
+            "Creating temporary table for loading into '%s'", count, self.table_name(stream, False)
+        )
         cur.execute(self.create_table_query(table_name=temp_table, is_temporary=True))
 
         # batch the records into a CSV file and do a copy operation
@@ -384,11 +385,21 @@ class DbSync:
             )
             for record in records:
                 csvwriter.writerow(self.record_to_flattened(record))
+        self.logger.info(
+            "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
+        )
         cur.execute("COPY {} FROM '{}' (max_line_size 10485760)".format(temp_table, temp_file_csv))
 
         if len(self.stream_schema_message["key_properties"]) > 0:
             cur.execute(self.update_from_temp_table(temp_table))
+
+        self.logger.info(
+            "Loading %d rows from '%s' into '%s'", count, temp_table, self.table_name(stream, False)
+        )
         cur.execute(self.insert_from_temp_table(temp_table))
+        self.logger.info(
+            f"Dropping temporary table {temp_table}"
+        )
         cur.execute(f"DROP TABLE {temp_table}")
         os.unlink(temp_file_csv)
 
