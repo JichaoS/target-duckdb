@@ -136,6 +136,8 @@ def persist_lines(connection, config, lines) -> None:
     records_to_load = {}
     row_count = {}
     stream_to_sync = {}
+    # Streams that are skipped due missing primary key.
+    streams_missing_primary_key = set()
     total_row_count = {}
     batch_size_rows = config.get("batch_size_rows", DEFAULT_BATCH_SIZE_ROWS)
 
@@ -165,6 +167,12 @@ def persist_lines(connection, config, lines) -> None:
 
             # Get schema for this record's stream
             stream = o["stream"]
+
+            # Skip the stream missing primary key.
+            if stream in streams_missing_primary_key and config.get(
+                "skip_streams_missing_primary_key", True
+            ):
+                continue
 
             # Validate record
             if config.get("validate_records"):
@@ -270,15 +278,22 @@ def persist_lines(connection, config, lines) -> None:
             #
             # If you want to load tables with no Primary Key:
             #  1) Set ` 'primary_key_required': false ` in the target-duckdb config.json
-            if (
-                config.get("primary_key_required", True)
-                and len(o["key_properties"]) == 0
-            ):
-                LOGGER.critical(
-                    "Primary key is set to mandatory but not defined in the [%s] stream",
-                    stream,
-                )
-                raise Exception("key_properties field is required")
+            # If you want to skip loading tables without primary keys:
+            #  1) Set ` 'skip_streams_missing_primary_key': true ` in the target-duckdb config.json
+            if len(o["key_properties"]) == 0:
+                streams_missing_primary_key.add(stream)
+                if config.get("skip_streams_missing_primary_key", True):
+                    LOGGER.warn(
+                        "Skipping loading of stream %s because it is missing a primary key",
+                        stream,
+                    )
+                    continue
+                elif config.get("primary_key_required", True):
+                    LOGGER.critical(
+                        "Primary key is set to mandatory but not defined in the [%s] stream",
+                        stream,
+                    )
+                    raise Exception("key_properties field is required")
 
             key_properties[stream] = o["key_properties"]
 
