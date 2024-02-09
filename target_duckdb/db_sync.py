@@ -371,7 +371,7 @@ class DbSync:
         temp_file_csv = os.path.join(temp_dir, f"{temp_table}.csv")
 
         self.logger.info(
-            "Creating temporary table for loading into '%s'", count, self.table_name(stream, False)
+            f"Creating temporary table for loading {count} into '{self.table_name(stream, False)}'"
         )
         cur.execute(self.create_table_query(table_name=temp_table, is_temporary=True))
 
