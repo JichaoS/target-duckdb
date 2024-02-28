@@ -388,7 +388,7 @@ class DbSync:
         self.logger.info(
             "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
         )
-        cur.execute("COPY {} FROM '{}' (max_line_size 10485760)".format(temp_table, temp_file_csv))
+        cur.execute("COPY {} FROM '{}' (max_line_size 1073741824)".format(temp_table, temp_file_csv))
 
         if len(self.stream_schema_message["key_properties"]) > 0:
             cur.execute(self.update_from_temp_table(temp_table))
