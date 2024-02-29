@@ -237,6 +237,7 @@ class DbSync:
         else:
             self.catalog_name = get_catalog_name(self.connection_config)
         self.schema_name = None
+        self.lineterminator = "\r\n"
 
         # Init stream schema
         if stream_schema_message is not None:
@@ -382,13 +383,14 @@ class DbSync:
                 delimiter=self.delimiter,
                 quotechar=self.quotechar,
                 quoting=csv.QUOTE_MINIMAL,
+                lineterminator=self.lineterminator
             )
             for record in records:
                 csvwriter.writerow(self.record_to_flattened(record))
         self.logger.info(
             "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
         )
-        cur.execute("COPY {} FROM '{}' (max_line_size 1073741824)".format(temp_table, temp_file_csv))
+        cur.execute("COPY {} FROM '{}' (max_line_size 1073741824, new_line '\\r\\n')".format(temp_table, temp_file_csv))
 
         if len(self.stream_schema_message["key_properties"]) > 0:
             cur.execute(self.update_from_temp_table(temp_table))
