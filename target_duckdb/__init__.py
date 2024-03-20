@@ -278,6 +278,7 @@ def persist_lines(connection, config, lines) -> None:
             #
             # If you want to load tables with no Primary Key:
             #  1) Set ` 'primary_key_required': false ` in the target-duckdb config.json
+            #  2) Set ` 'skip_streams_missing_primary_key': false ` in the target-duckdb config.json
             # If you want to skip loading tables without primary keys:
             #  1) Set ` 'skip_streams_missing_primary_key': true ` in the target-duckdb config.json
             if len(o["key_properties"]) == 0:
