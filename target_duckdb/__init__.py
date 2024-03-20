@@ -323,13 +323,10 @@ def persist_lines(connection, config, lines) -> None:
                 "Unknown message type {} in message {}".format(o["type"], o)
             )
 
-    # if some bucket has records that need to be flushed but haven't reached batch size
-    # then flush all buckets.
-    if sum(row_count.values()) > 0:
-        # flush all streams one last time, delete records if needed, reset counts and then emit current state
-        flushed_state = flush_streams(
-            records_to_load, row_count, stream_to_sync, config, state, flushed_state
-        )
+    # flush all streams one last time, delete records if needed, reset counts and then emit current state
+    flushed_state = flush_streams(
+        records_to_load, row_count, stream_to_sync, config, state, flushed_state
+    )
 
     # emit latest state
     emit_state(copy.deepcopy(flushed_state))
@@ -389,9 +386,9 @@ def flush_streams(
                     state["bookmarks"][stream]
                 )
 
-        # If we flush every bucket use the latest state
-        else:
-            flushed_state = copy.deepcopy(state)
+    # If we flush every bucket use the latest state
+    if not filter_streams:
+        flushed_state = copy.deepcopy(state)
 
     # Return with state message with flushed positions
     return flushed_state
