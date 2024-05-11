@@ -389,9 +389,11 @@ class DbSync:
             for record in records:
                 csvwriter.writerow(self.record_to_flattened(record))
 
+        self.logger.info("Garbage collecting in memory data after writing to csv")
         # Free memory used by records after flushing to disk
         del records
         gc.collect()
+        self.logger.info("Garbage collection done")
 
         self.logger.info(
             "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
