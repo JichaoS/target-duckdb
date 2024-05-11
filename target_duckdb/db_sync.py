@@ -7,6 +7,7 @@ import re
 import time
 import uuid
 from urllib.parse import urlparse
+import gc
 
 from target_duckdb.logger import get_logger
 
@@ -387,6 +388,11 @@ class DbSync:
             )
             for record in records:
                 csvwriter.writerow(self.record_to_flattened(record))
+
+        # Free memory used by records after flushing to disk
+        del records
+        gc.collect()
+
         self.logger.info(
             "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
         )
