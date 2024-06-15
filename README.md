@@ -55,9 +55,19 @@ Additional options in `config.json`:
 | hard_delete                         | Boolean |            | (Default: False) When `hard_delete` option is true then DELETE SQL commands will be performed in DuckDB to delete rows in tables. It's achieved by continuously checking the  `_SDC_DELETED_AT` metadata column sent by the singer tap. Due to deleting rows requires metadata columns, `hard_delete` option automatically enables the `add_metadata_columns` option as well. |
 | data_flattening_max_level           | Integer |            | (Default: 0) Object type RECORD items from taps can be transformed to flattened columns by creating columns automatically.<br><br>When value is 0 (default) then flattening functionality is turned off. |
 | primary_key_required                | Boolean |            | (Default: True) Log based and Incremental replications on tables with no Primary Key cause duplicates when merging UPDATE events. When set to true, stop loading data if no Primary Key is defined. |
+| skip_streams_missing_primary_key                | Boolean |            | (Default: True) Will skip streams missing primary key (see section below for loading tables with no primary keys) |
 | validate_records                    | Boolean |            | (Default: False) Validate every single record message to the corresponding JSON schema. This option is disabled by default and invalid RECORD messages will fail only at load time by DuckDB. Enabling this option will detect invalid records earlier but could cause performance degradation. |
 | temp_dir                            | String  |            | (Default: platform-dependent) Directory of temporary CSV files with RECORD messages. |
 | duckdb_max_memory                   | String  |            | (Default: 6GB) Duckdb client's max_memory parameter |
+
+### Loading tables with no primary keys
+If you want to load tables with no Primary Key:
+1) Set ` 'primary_key_required': false ` in the target-duckdb config.json
+2) Set ` 'skip_streams_missing_primary_key': false ` in the target-duckdb config.json
+
+If you want to skip loading tables without primary keys:
+1) Set ` 'primary_key_required': false ` in the target-duckdb config.json
+2) Set ` 'skip_streams_missing_primary_key': true ` in the target-duckdb config.json
 
 ### To run tests:
 
