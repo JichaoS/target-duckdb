@@ -12,6 +12,12 @@ import gc
 from target_duckdb.logger import get_logger
 
 
+# This is a special string value denoting null for csv encoding and decoding
+# That is, when we write to csv this value will be written in place for null
+# so that we can represent empty string in csv.
+NULL_VALUE = "__TARGET_DUCKDB_NULL"
+
+
 # copied from inflection.camelize to eliminate a dependency
 def camelize(string: str, uppercase_first_letter: bool = True) -> str:
     if uppercase_first_letter:
@@ -359,8 +365,8 @@ class DbSync:
 
         return [
             flatten[name]
-            if name in flatten and (flatten[name] == 0 or flatten[name])
-            else None
+            if name in flatten and flatten[name] is not None
+            else NULL_VALUE
             for name in self.flatten_schema
         ]
 
@@ -392,7 +398,7 @@ class DbSync:
         self.logger.info(
             "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
         )
-        cur.execute("COPY {} FROM '{}' (max_line_size 1073741824, new_line '\\r\\n')".format(temp_table, temp_file_csv))
+        cur.execute(f"COPY {temp_table} FROM '{temp_file_csv}' (max_line_size 1073741824, new_line '\\r\\n', NULL {NULL_VALUE})")
 
         if len(self.stream_schema_message["key_properties"]) > 0:
             cur.execute(self.update_from_temp_table(temp_table))
