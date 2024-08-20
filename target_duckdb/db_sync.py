@@ -207,9 +207,9 @@ def get_catalog_name(connection_config):
         path_db = "my_db"
     return path_db
 
-def remove_line_breaks(column_value):
+def remove_line_breaks_and_delimiter(column_value, delimiter):
     if isinstance(column_value, str):
-        return column_value.replace("\n", " ").replace("\r", " ")
+        return column_value.replace("\n", " ").replace("\r", " ").replace(delimiter, " ")
     else:
         return column_value
 
@@ -369,7 +369,7 @@ class DbSync:
         )
 
         return [
-            remove_line_breaks(flatten[name])
+            remove_line_breaks_and_delimiter(flatten[name], self.delimiter)
             if name in flatten and flatten[name] is not None
             else NULL_VALUE
             for name in self.flatten_schema
