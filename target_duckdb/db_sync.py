@@ -207,6 +207,11 @@ def get_catalog_name(connection_config):
         path_db = "my_db"
     return path_db
 
+def remove_line_breaks(column_value):
+    if isinstance(column_value, str):
+        return column_value.replace("\n", " ").replace("\r", " ")
+    else:
+        return column_value
 
 # pylint: disable=too-many-public-methods,too-many-instance-attributes
 class DbSync:
@@ -364,7 +369,7 @@ class DbSync:
         )
 
         return [
-            flatten[name]
+            remove_line_breaks(flatten[name])
             if name in flatten and flatten[name] is not None
             else NULL_VALUE
             for name in self.flatten_schema
