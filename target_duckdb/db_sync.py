@@ -207,7 +207,7 @@ def get_catalog_name(connection_config):
         path_db = "my_db"
     return path_db
 
-def remove_line_breaks_and_delimiter(column_value, delimiter="|"):
+def remove_line_breaks_and_delimiter(column_value, delimiter):
     if isinstance(column_value, str):
         return column_value.replace("\n", " ").replace("\r", " ").replace(delimiter, " ")
     else:
