@@ -119,7 +119,8 @@ def duckdb_connect(config):
     if token:
         path = f"{path}?token={token}"
     db = duckdb.connect(path)
-    db.execute(f"SET max_memory='{config.get('duckdb_max_memory', '6GB')}'")
+    if "duckdb_max_memory" in config:
+        db.execute(f"SET max_memory='{config.get('duckdb_max_memory')}'")
 
     settings = config.get("settings", {})
     for setting, value in settings.items():
