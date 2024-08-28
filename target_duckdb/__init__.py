@@ -119,8 +119,8 @@ def duckdb_connect(config):
     if token:
         path = f"{path}?token={token}"
     db = duckdb.connect(path)
-    if "duckdb_max_memory" in config:
-        db.execute(f"SET max_memory='{config.get('duckdb_max_memory')}'")
+    if "duckdb_max_memory" in config and type(config.get("duckdb_max_memory")) is str:
+        LOGGER.info("Setting max_memory to %s", config.get("duckdb_max_memory"))
 
     settings = config.get("settings", {})
     for setting, value in settings.items():
