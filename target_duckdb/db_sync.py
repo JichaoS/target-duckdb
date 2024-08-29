@@ -149,6 +149,9 @@ def flatten_record(
     items = []
     for k, v in d.items():
         new_key = flatten_key(k, parent_key, sep)
+        # some schemas from airbyte sources have description field which is not needed and causes issues
+        if "description" in v.keys():
+            del v["description"]
         if isinstance(v, collections.abc.MutableMapping) and level < max_level:
             items.extend(
                 flatten_record(
