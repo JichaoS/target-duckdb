@@ -84,6 +84,9 @@ def flatten_schema(d, parent_key=[], sep="__", level=0, max_level=0):
 
     for k, v in d["properties"].items():
         new_key = flatten_key(k, parent_key, sep)
+        # some schemas from airbyte sources have description field which is not needed and causes issues
+        if "description" in v.keys():
+            del v["description"]
         if "type" in v.keys():
             if "object" in v["type"] and "properties" in v and level < max_level:
                 items.extend(
@@ -207,11 +210,15 @@ def get_catalog_name(connection_config):
         path_db = "my_db"
     return path_db
 
+
 def remove_line_breaks_and_delimiter(column_value, delimiter):
     if isinstance(column_value, str):
-        return column_value.replace("\n", " ").replace("\r", " ").replace(delimiter, " ")
+        return (
+            column_value.replace("\n", " ").replace("\r", " ").replace(delimiter, " ")
+        )
     else:
         return column_value
+
 
 # pylint: disable=too-many-public-methods,too-many-instance-attributes
 class DbSync:
@@ -340,7 +347,9 @@ class DbSync:
         if without_schema:
             return f'"{pg_table_name.lower()}"'
         elif self.catalog_name:
-            return f'"{self.catalog_name}"."{self.schema_name}"."{pg_table_name.lower()}"'
+            return (
+                f'"{self.catalog_name}"."{self.schema_name}"."{pg_table_name.lower()}"'
+            )
         else:
             return f'"{self.schema_name}"."{pg_table_name.lower()}"'
 
@@ -395,26 +404,32 @@ class DbSync:
                 delimiter=self.delimiter,
                 quotechar=self.quotechar,
                 quoting=csv.QUOTE_MINIMAL,
-                lineterminator=self.lineterminator
+                lineterminator=self.lineterminator,
             )
             for record in records:
                 csvwriter.writerow(self.record_to_flattened(record))
 
         self.logger.info(
-            "Loading %d rows from csv file at '%s' into'%s'", count, temp_file_csv, temp_table
+            "Loading %d rows from csv file at '%s' into'%s'",
+            count,
+            temp_file_csv,
+            temp_table,
         )
-        cur.execute(f"COPY {temp_table} FROM '{temp_file_csv}' (max_line_size 1073741824, new_line '\\r\\n', NULL {NULL_VALUE})")
+        cur.execute(
+            f"COPY {temp_table} FROM '{temp_file_csv}' (max_line_size 1073741824, new_line '\\r\\n', NULL {NULL_VALUE})"
+        )
 
         if len(self.stream_schema_message["key_properties"]) > 0:
             cur.execute(self.update_from_temp_table(temp_table))
 
         self.logger.info(
-            "Loading %d rows from '%s' into '%s'", count, temp_table, self.table_name(stream, False)
+            "Loading %d rows from '%s' into '%s'",
+            count,
+            temp_table,
+            self.table_name(stream, False),
         )
         cur.execute(self.insert_from_temp_table(temp_table))
-        self.logger.info(
-            f"Dropping temporary table {temp_table}"
-        )
+        self.logger.info(f"Dropping temporary table {temp_table}")
         cur.execute(f"DROP TABLE {temp_table}")
         os.unlink(temp_file_csv)
 
