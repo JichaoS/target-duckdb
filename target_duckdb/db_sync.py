@@ -106,7 +106,11 @@ def flatten_schema(d, parent_key=[], sep="__", level=0, max_level=0):
             while entry["type"] == "null":
                 i += 1
                 entry = llv[i]
-            entry["type"] = ["null", entry["type"]]
+            # modified to handle if type value in schema is string or list of strings
+            if isinstance(entry["type"], str):
+                entry["type"] = list(set(["null", entry["type"]]))
+            elif isinstance(entry["type"], list):
+                entry["type"] = list(set(["null"] + entry["type"]))  # type: ignore
             items.append((new_key, entry))
         else:
             if len(v.values()) > 0:
